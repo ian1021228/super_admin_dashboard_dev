@@ -72,7 +72,7 @@ export const DEFAULT_TENANTS = [
     },
     {
         id: 'SCH-901',
-        name: '展示示範學校 (DEV測試校)',
+        name: '測試國中',
         code: 'DEMO',
         adminAccount: 'antigravity',
         adminPassword: '123456',
