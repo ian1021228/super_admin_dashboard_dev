@@ -1,6 +1,18 @@
 // Constants and Config for Super Admin Dashboard
 export const SUPER_ADMIN_EMAIL = 'ianw.solar@gmail.com';
 
+// 測試版獨立 Firebase Firestore 命名空間（與正式版 100% 實體隔離）
+export const globalAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'homework-checker-dev';
+
+export const firebaseConfig = {
+    apiKey: "AIzaSyDuBAZ5hEcrhpYt-XjhiXfi-wuow0Cq83A",
+    authDomain: "cheker-barcode.firebaseapp.com",
+    projectId: "cheker-barcode",
+    storageBucket: "cheker-barcode.firebasestorage.app",
+    messagingSenderId: "1093592859159",
+    appId: "1:1093592859159:web:40c0741defbb074e4ad252"
+};
+
 export const STORAGE_KEYS = {
     AUTH_USER: 'super_admin_auth_user',
     TENANTS: 'super_admin_tenants',

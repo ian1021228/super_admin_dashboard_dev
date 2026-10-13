@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from './constants.js';
+import { getGlobalBroadcastsFromCloud, saveGlobalBroadcastToCloud, deleteGlobalBroadcastFromCloud } from './firebase.js';
 
 export class SuperAdminBroadcast {
     constructor() {
@@ -6,7 +7,18 @@ export class SuperAdminBroadcast {
         this.loadBroadcasts();
     }
 
-    loadBroadcasts() {
+    async loadBroadcasts() {
+        try {
+            const list = await getGlobalBroadcastsFromCloud();
+            if (Array.isArray(list) && list.length > 0) {
+                this.broadcasts = list;
+                localStorage.setItem(STORAGE_KEYS.GLOBAL_BROADCAST, JSON.stringify(list));
+                return this.broadcasts;
+            }
+        } catch (e) {
+            console.error('Failed to load broadcasts from cloud:', e);
+        }
+
         try {
             const saved = localStorage.getItem(STORAGE_KEYS.GLOBAL_BROADCAST);
             if (saved) {
@@ -15,11 +27,11 @@ export class SuperAdminBroadcast {
                 this.broadcasts = [
                     {
                         id: 'BC-001',
-                        title: '四層級架構全新升級通知',
-                        content: '全系統已啟用獨立最高管理端、學校管理端、教師端與家長端四層架構，各校行政抽查與晨間出缺席大看板已全面連線。',
+                        title: '校園四端系統全面連線通知',
+                        content: '全系統已啟用系統管理端、學校管理端、教師端與家長端四端架構，各校行政抽查、晨間出缺席大看板與校安廣播已全面即時連線。',
                         level: 'info',
                         sender: '最高系統管理員 (ianw.solar@gmail.com)',
-                        createdAt: '2026-10-09 08:00',
+                        createdAt: '2026-10-13 08:00',
                         active: true
                     }
                 ];
@@ -28,6 +40,7 @@ export class SuperAdminBroadcast {
         } catch (e) {
             console.error('Failed to load broadcasts:', e);
         }
+        return this.broadcasts;
     }
 
     saveBroadcasts() {
@@ -38,7 +51,7 @@ export class SuperAdminBroadcast {
         return this.broadcasts;
     }
 
-    addBroadcast(data) {
+    async addBroadcast(data) {
         const newBC = {
             id: 'BC-' + Date.now().toString().slice(-4),
             title: data.title || '系統公告',
@@ -50,11 +63,21 @@ export class SuperAdminBroadcast {
         };
         this.broadcasts.unshift(newBC);
         this.saveBroadcasts();
+        try {
+            await saveGlobalBroadcastToCloud(newBC);
+        } catch (e) {
+            console.warn('Sync broadcast to cloud warning:', e);
+        }
         return newBC;
     }
 
-    deleteBroadcast(id) {
+    async deleteBroadcast(id) {
         this.broadcasts = this.broadcasts.filter(b => b.id !== id);
         this.saveBroadcasts();
+        try {
+            await deleteGlobalBroadcastFromCloud(id);
+        } catch (e) {
+            console.warn('Delete broadcast from cloud warning:', e);
+        }
     }
 }

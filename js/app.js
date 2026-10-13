@@ -15,7 +15,7 @@ class SuperAdminApp {
         this.bindEvents();
     }
 
-    handleAuthState(user) {
+    async handleAuthState(user) {
         const loginView = document.getElementById('login-view');
         const mainView = document.getElementById('main-dashboard-view');
         const userBadge = document.getElementById('super-admin-user-badge');
@@ -24,6 +24,8 @@ class SuperAdminApp {
             loginView.classList.add('hidden');
             mainView.classList.remove('hidden');
             userBadge.textContent = user.displayName || user.email;
+            await this.tenantManager.loadTenants();
+            await this.broadcast.loadBroadcasts();
             this.renderKPIs();
             this.switchTab(this.currentTab);
         } else {
@@ -274,7 +276,7 @@ class SuperAdminApp {
         }
 
         if (form) {
-            form.onsubmit = (e) => {
+            form.onsubmit = async (e) => {
                 e.preventDefault();
                 const name = document.getElementById('tenant-name').value.trim();
                 const code = document.getElementById('tenant-code').value.trim();
@@ -283,7 +285,7 @@ class SuperAdminApp {
                 const maxClasses = document.getElementById('tenant-classes').value;
                 const contact = document.getElementById('tenant-contact').value.trim();
 
-                this.tenantManager.addTenant({
+                await this.tenantManager.addTenant({
                     name,
                     code,
                     adminAccount: account,
@@ -310,13 +312,13 @@ class SuperAdminApp {
         // Add Broadcast Form
         const bcForm = document.getElementById('form-add-broadcast');
         if (bcForm) {
-            bcForm.onsubmit = (e) => {
+            bcForm.onsubmit = async (e) => {
                 e.preventDefault();
                 const title = document.getElementById('bc-title').value.trim();
                 const content = document.getElementById('bc-content').value.trim();
                 const level = document.getElementById('bc-level').value;
 
-                this.broadcast.addBroadcast({ title, content, level });
+                await this.broadcast.addBroadcast({ title, content, level });
                 this.auth.logAudit('發布全域公告', `發布公告：${title}`);
                 bcForm.reset();
                 this.renderBroadcastList();

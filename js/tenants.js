@@ -1,4 +1,5 @@
 import { STORAGE_KEYS, DEFAULT_TENANTS } from './constants.js';
+import { getSchoolTenantsFromCloud, saveSchoolTenantToCloud, deleteSchoolTenantFromCloud } from './firebase.js';
 
 export class TenantManager {
     constructor() {
@@ -6,30 +7,22 @@ export class TenantManager {
         this.loadTenants();
     }
 
-    loadTenants() {
+    async loadTenants() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEYS.TENANTS);
-            if (saved) {
-                this.tenants = JSON.parse(saved);
-            } else {
-                this.tenants = [...DEFAULT_TENANTS];
-                this.saveTenants();
-            }
+            this.tenants = await getSchoolTenantsFromCloud();
         } catch (e) {
-            console.error('Failed to load tenants:', e);
-            this.tenants = [...DEFAULT_TENANTS];
+            console.error('Failed to load tenants from cloud, falling back:', e);
+            const saved = localStorage.getItem(STORAGE_KEYS.TENANTS);
+            this.tenants = saved ? JSON.parse(saved) : [...DEFAULT_TENANTS];
         }
-    }
-
-    saveTenants() {
-        localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(this.tenants));
+        return this.tenants;
     }
 
     getTenants() {
         return this.tenants;
     }
 
-    addTenant(schoolData) {
+    async addTenant(schoolData) {
         const id = 'SCH-' + Math.floor(100 + Math.random() * 900);
         const newSchool = {
             id,
@@ -47,23 +40,26 @@ export class TenantManager {
             todayAttendanceRate: 98.0
         };
         this.tenants.unshift(newSchool);
-        this.saveTenants();
+        localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(this.tenants));
+        await saveSchoolTenantToCloud(newSchool);
         return newSchool;
     }
 
-    updateTenant(id, updateData) {
+    async updateTenant(id, updateData) {
         const index = this.tenants.findIndex(t => t.id === id);
         if (index !== -1) {
             this.tenants[index] = { ...this.tenants[index], ...updateData };
-            this.saveTenants();
+            localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(this.tenants));
+            await saveSchoolTenantToCloud(this.tenants[index]);
             return this.tenants[index];
         }
         return null;
     }
 
-    deleteTenant(id) {
+    async deleteTenant(id) {
         this.tenants = this.tenants.filter(t => t.id !== id);
-        this.saveTenants();
+        localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(this.tenants));
+        await deleteSchoolTenantFromCloud(id);
     }
 
     generateSecurePassword(prefix = 'sch') {
